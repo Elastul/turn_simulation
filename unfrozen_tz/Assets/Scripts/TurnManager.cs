@@ -17,9 +17,9 @@ public class TurnManager : MonoBehaviour
     GameObject killButton;
     List<Warrior_SO> warriorsList = new List<Warrior_SO>();
     List<Warrior_SO> warriorsRoundTurnOrder = new List<Warrior_SO>();
-    List<Warrior_SO> _evenOrderList;
-    List<Warrior_SO> _oddOrderList;
-    List<int> roundIndexes;
+    List<Warrior_SO> _evenOrderList = new List<Warrior_SO>();
+    List<Warrior_SO> _oddOrderList= new List<Warrior_SO>();
+    List<int> roundIndexes = new List<int>();
     int currentRound = 1;
     int turnCounter = 0;
     int globalTurnCounter = 1;
@@ -44,10 +44,12 @@ public class TurnManager : MonoBehaviour
         globalTurnCounter++;
         warriorsRoundTurnOrder.RemoveAt(0);
         warriorsList.Remove(warriorsRoundTurnOrder[0]);
+
         if(warriorsList.Count <= 1)
         {
             killButton.SetActive(false);
         }
+
         if(turnCounter >= warriorsList.Count-1)
         {
             turnCounter = 0;
@@ -57,6 +59,7 @@ public class TurnManager : MonoBehaviour
         {
             turnCounter++;
         }
+
         FillMoveOrderList(true, currentRound % 2 == 0, turnCounter);
         onOrderUpdate.Invoke(warriorsRoundTurnOrder, globalTurnCounter, roundIndexes, currentRound);
     }
@@ -64,6 +67,7 @@ public class TurnManager : MonoBehaviour
     public void SkipTurn()
     {
         globalTurnCounter++;
+
         if(turnCounter >= warriorsList.Count-1)
         {
             turnCounter = 0;
@@ -73,6 +77,7 @@ public class TurnManager : MonoBehaviour
         {
             turnCounter++;
         }
+
         FillMoveOrderList(false, currentRound % 2 == 0, turnCounter);
         onOrderUpdate.Invoke(warriorsRoundTurnOrder, globalTurnCounter, roundIndexes, currentRound);
     }
@@ -85,8 +90,10 @@ public class TurnManager : MonoBehaviour
             CalculateMoveOrder(true);
             CalculateMoveOrder(false);
         }
+
         warriorsRoundTurnOrder.Clear();
-        roundIndexes = new List<int>();
+        roundIndexes.Clear();
+
         while(warriorsRoundTurnOrder.Count < 20)
         {
             for ( ; turn < warriorsList.Count; turn++)
@@ -100,6 +107,7 @@ public class TurnManager : MonoBehaviour
                     warriorsRoundTurnOrder.Add(_oddOrderList[turn]);
                 }
             }
+
             roundIndexes.Add(warriorsRoundTurnOrder.Count-1);
             isRoundEven = isRoundEven ? false : true;
             turn = 0;
@@ -109,60 +117,71 @@ public class TurnManager : MonoBehaviour
 
     private void CalculateMoveOrder(bool even)
     {
-        for (int i = warriorsList.Count - 1; i >= 1; i--)
+        for (int i = 0; i < warriorsList.Count - 1; i++)
         {
-            for (int j = 0; j < i; j++)
+            for (int j = warriorsList.Count - 1; j > i; j--)
             {
-                if(warriorsList[j].Init > warriorsList[j + 1].Init)
+                Warrior_SO currentWarrior = warriorsList[j];
+                Warrior_SO nextWarrior = warriorsList[j - 1];
+
+                CompareWarriors(currentWarrior, nextWarrior, even, j);
+            }
+        }
+
+        if(even)
+        {
+            _evenOrderList.Clear();
+            _evenOrderList.AddRange(warriorsList);
+        }
+        else
+        {
+            _oddOrderList.Clear();
+            _oddOrderList.AddRange(warriorsList);
+        }
+    }
+
+    private void CompareWarriors(Warrior_SO currentWarrior, Warrior_SO nextWarrior, bool even, int index)
+    {
+        if(currentWarrior.Init > nextWarrior.Init)
+        {
+            ToSwap(index, index - 1);
+        }
+        else if(currentWarrior.Init == nextWarrior.Init)
+        {
+            if(currentWarrior.Speed > nextWarrior.Speed)
+            {
+                ToSwap(index, index - 1);
+            }
+            else if(currentWarrior.Speed == nextWarrior.Speed)
+            {
+                if((currentWarrior.IsRed && nextWarrior.IsRed) || (!currentWarrior.IsRed && !nextWarrior.IsRed))
                 {
-                    ToSwap(j, j + 1);
-                }
-                else if(warriorsList[j].Init == warriorsList[j + 1].Init)
-                {
-                    if(warriorsList[j].Speed > warriorsList[j + 1].Speed)
+                    if(currentWarrior.Id < nextWarrior.Id)
                     {
-                        ToSwap(j, j + 1);
+                        ToSwap(index, index - 1);
                     }
-                    else if(warriorsList[j].Speed == warriorsList[j + 1].Speed)
+                }
+                else
+                {
+                    if(even)
                     {
-                        if((warriorsList[j].IsRed && warriorsList[j + 1].IsRed) || (!warriorsList[j].IsRed && !warriorsList[j + 1].IsRed))
+                        if(!currentWarrior.IsRed)
                         {
-                            if(warriorsList[j].Id < warriorsList[j + 1].Id)
-                            {
-                                ToSwap(j, j + 1);
-                            }
+                            ToSwap(index, index - 1);
                         }
-                        else
+                    }
+                    else
+                    {
+                        if(currentWarrior.IsRed)
                         {
-                            if(even)
-                            {
-                                if(!warriorsList[j].IsRed)
-                                {
-                                    ToSwap(j, j + 1);
-                                }
-                            }
-                            else
-                            {
-                                if(warriorsList[j].IsRed)
-                                {
-                                    ToSwap(j, j + 1);
-                                }
-                            }
+                            ToSwap(index, index - 1);
                         }
                     }
                 }
             }
         }
-        warriorsList.Reverse();
-        if(even)
-        {
-            _evenOrderList = new List<Warrior_SO>(warriorsList);
-        }
-        else
-        {
-            _oddOrderList = new List<Warrior_SO>(warriorsList);
-        }
     }
+
     private void ToSwap(int first, int second)
     {
         Warrior_SO temp = warriorsList[first];

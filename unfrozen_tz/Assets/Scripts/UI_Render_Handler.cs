@@ -34,11 +34,14 @@ public class UI_Render_Handler : MonoBehaviour
                 {
                     break;
                 }
+
+                string description = string.Format("Существо {0}: Инициатива - {1} Скорость - {2}", warrior.Name, warrior.Init, warrior.Speed);
+                Color color = warrior.IsRed ? Color.red : Color.blue;
                 GameObject _tempWarrior = Instantiate(warriorPanel, main_panel);
+
                 _tempObectsList.Add(_tempWarrior);
-                _tempWarrior.GetComponentsInChildren<TextMeshProUGUI>()[0].text = (turn++).ToString();
-                _tempWarrior.GetComponentsInChildren<TextMeshProUGUI>()[1].text = "Существо " + warrior.Name + ": Инициатива - " + warrior.Init + " Скорость - " + warrior.Speed;
-                _tempWarrior.GetComponent<RectTransform>().Find("Description_Panel").GetComponent<Image>().color = warrior.IsRed ? Color.red : Color.blue;
+                _tempWarrior.GetComponent<WarriorUIPanel>().SetWarrior(turn++, description, color);
+
                 if(i == roundIndexes[0] && roundIndexes.Count != 0)
                 {
                     roundIndexes.RemoveAt(0);
@@ -46,6 +49,7 @@ public class UI_Render_Handler : MonoBehaviour
                     _tempRound.GetComponentInChildren<TextMeshProUGUI>().text = "Раунд №" + ++round;
                     _tempObectsList.Add(_tempRound);
                 }
+
                 i++;
             }
         }
